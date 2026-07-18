@@ -15,7 +15,7 @@ constexpr char kPrefsNamespace[] = "planeradar";
 constexpr char kPrefsRangeKey[] = "rangeIdx";
 constexpr char kPrefsMilesKey[] = "useMiles";
 constexpr char kPrefsRunwaysKey[] = "showRwys";
-constexpr uint8_t kDefaultRangeIndex = 1;  // 10 km ring
+constexpr uint8_t kDefaultRangeIndex = 3;  // 15 mi outer radius
 constexpr float kKmPerMile = 1.609344f;
 
 Preferences s_prefs;
@@ -92,6 +92,22 @@ float fetchRadiusKm() {
 bool useMiles() { return s_use_miles; }
 
 bool showRunways() { return s_show_runways; }
+
+float outerRadiusMiles() { return rangeCurrent().outer_km / kKmPerMile; }
+
+void saveOuterMilesFromPortal(const char* value) {
+  const float requested = value ? strtof(value, nullptr) : 0.0f;
+  if (requested < 1.0f || requested > 100.0f) return;
+  uint8_t best = 0;
+  float best_delta = 1e9f;
+  for (uint8_t i = 0; i < kRangePresetCount; ++i) {
+    const float delta = fabsf(kRangePresets[i].outer_km / kKmPerMile - requested);
+    if (delta < best_delta) { best = i; best_delta = delta; }
+  }
+  s_range_index = best;
+  saveRangeIndex();
+  Serial.printf("Outer radius: %.0f mi\n", outerRadiusMiles());
+}
 
 void saveMilesFromPortal(const char* checkbox_value) {
   s_use_miles = portalCheckboxChecked(checkbox_value);

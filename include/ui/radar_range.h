@@ -28,7 +28,9 @@ constexpr RangePreset kRangePresets[] = {
     {5.0f, 5.0f * kRing3ToOuterKm},
     {10.0f, 10.0f * kRing3ToOuterKm},
     {15.0f, 15.0f * kRing3ToOuterKm},
-    {25.0f, 25.0f * kRing3ToOuterKm},
+    // Outer-radius presets in miles for the setup page.
+    {11.25f * 1.609344f, 15.0f * 1.609344f},
+    {15.0f * 1.609344f, 20.0f * 1.609344f},
 };
 
 constexpr size_t kRangePresetCount =
@@ -45,6 +47,9 @@ float fetchRadiusKm();
 
 bool useMiles();
 bool showRunways();
+float outerRadiusMiles();
+/** Accepts the setup-page outer-radius value and saves the nearest preset. */
+void saveOuterMilesFromPortal(const char* value);
 /** WiFi portal checkbox: "T" = miles, otherwise km. */
 void saveMilesFromPortal(const char* checkbox_value);
 void saveRunwaysFromPortal(const char* checkbox_value);

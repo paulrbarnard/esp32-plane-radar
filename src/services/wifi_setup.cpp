@@ -75,6 +75,9 @@ WiFiManagerParameter s_param_lat("radar_lat", "Latitude (deg)", "0",
                                 kCoordParamLen, kCoordInputAttrs);
 WiFiManagerParameter s_param_lon("radar_lon", "Longitude (deg)", "0",
                                 kCoordParamLen, kCoordInputAttrs);
+char s_radius_miles[8] = "15";
+WiFiManagerParameter s_param_radius("outer_radius", "Radar radius (miles)", s_radius_miles,
+                                    sizeof(s_radius_miles), " type=\"number\" min=\"5\" max=\"20\" step=\"5\"");
 
 char s_miles_checkbox_attrs[32] = "type=\"checkbox\"";
 WiFiManagerParameter s_param_miles("use_miles", "Display distances in miles", "T", 2,
@@ -91,6 +94,8 @@ void refreshPortalParamDefaults() {
   snprintf(lon_buf, sizeof(lon_buf), "%.6f", services::location::lon());
   s_param_lat.setValue(lat_buf, kCoordParamLen);
   s_param_lon.setValue(lon_buf, kCoordParamLen);
+  snprintf(s_radius_miles, sizeof(s_radius_miles), "%.0f", ui::radar::outerRadiusMiles());
+  s_param_radius.setValue(s_radius_miles, sizeof(s_radius_miles));
   snprintf(s_miles_checkbox_attrs, sizeof(s_miles_checkbox_attrs), "type=\"checkbox\"%s",
            ui::radar::useMiles() ? " checked" : "");
   s_param_miles.setValue("T", 2);
@@ -106,12 +111,14 @@ void onPortalParamsSaved() {
   }
   ui::radar::saveMilesFromPortal(s_param_miles.getValue());
   ui::radar::saveRunwaysFromPortal(s_param_runways.getValue());
+  ui::radar::saveOuterMilesFromPortal(s_param_radius.getValue());
 }
 
 void attachPortalParams(WiFiManager& wm) {
   refreshPortalParamDefaults();
   wm.addParameter(&s_param_lat);
   wm.addParameter(&s_param_lon);
+  wm.addParameter(&s_param_radius);
   wm.addParameter(&s_param_miles);
   wm.addParameter(&s_param_runways);
   wm.setSaveParamsCallback(onPortalParamsSaved);

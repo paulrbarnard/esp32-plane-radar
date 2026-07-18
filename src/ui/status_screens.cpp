@@ -94,6 +94,7 @@ void drawTextBlock(uint16_t bg, uint16_t fg, const TextLine* lines, size_t count
     tft.drawString(lines[i].text, kCenterX, y + h / 2);
     y += h + kLineGap;
   }
+  displayFlush();
 }
 
 constexpr float kConnectingDetailVlw = 0.92f;
@@ -192,6 +193,7 @@ void statusScreenConnectingBegin(const char* ssid) {
   s_connecting_text_drawn = false;
   drawConnectingText();
   drawSpinnerDots();
+  displayFlush();
 }
 
 void statusScreenConnectingTick() {
@@ -204,6 +206,7 @@ void statusScreenConnectingTick() {
     s_spinner_angle_deg -= 360.0f;
   }
   drawSpinnerDots();
+  displayFlush();
 }
 
 void statusScreenPortal() {

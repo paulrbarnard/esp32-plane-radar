@@ -1,0 +1,25 @@
+menu "Plane Radar display"
+
+config EXAMPLE_DOUBLE_FB
+    bool "Use ESP-IDF RGB panel double frame buffers"
+    default n
+    help
+        Let the ESP-IDF RGB driver own two complete frame buffers in PSRAM.
+        LVGL draws directly into the inactive buffer and the driver switches
+        buffers at refresh, avoiding application-managed copies.
+
+config RADAR_LVGL_PSRAM_DOUBLE_BUFFER
+    bool "Deprecated full-screen LVGL PSRAM rendering"
+    default n
+    help
+        Retained for existing sdkconfig files. Full-screen PSRAM rendering is
+        not used because it can starve RGB scan-out on this panel.
+
+config RADAR_RGB_BOUNCE_BUFFER
+    bool "Use ESP-IDF RGB bounce buffers"
+    default y
+    help
+        Stages RGB scan-out rows in internal DMA RAM. This prevents PSRAM
+        activity from Wi-Fi or LVGL updates from starving the LCD peripheral.
+
+endmenu

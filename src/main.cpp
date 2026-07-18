@@ -7,6 +7,7 @@
 
 #include "config.h"
 #include "hardware/display.h"
+#include "hardware/touch.h"
 #include "services/adsb_client.h"
 #include "services/radar_location.h"
 #include "services/wifi_setup.h"
@@ -49,6 +50,16 @@ void handleBootButton() {
   }
 }
 
+void handleTouch() {
+  int x = 0, y = 0;
+  if (touchConsumeTap(&x, &y) && g_radar_visible) ui::radarDisplayHandleTap(x, y);
+}
+
+void pollDuringNetworkIo() {
+  wifiLoop();
+  handleTouch();
+}
+
 void fetchAndDrawAircraft() {
   const float fetch_km = ui::radar::fetchRadiusKm();
   if (!services::adsb::fetchUpdate(services::location::lat(),
@@ -58,6 +69,7 @@ void fetchAndDrawAircraft() {
   }
   ui::radarDisplayRefreshAircraft();
   handleBootButton();
+  handleTouch();
 }
 
 }  // namespace
@@ -75,7 +87,7 @@ void setup() {
   }
   services::location::init();
   ui::radar::rangeInit();
-  services::adsb::setPollFn(wifiLoop);
+  services::adsb::setPollFn(pollDuringNetworkIo);
 
   if (wifiSetupConnect()) {
     showRadarIfConnected();
@@ -84,6 +96,9 @@ void setup() {
 
 void loop() {
   handleBootButton();
+  // Touch must be sampled continuously.  Restricting this to the ADS-B refresh
+  // path made a tap wait for the next network request (normally about 5 s).
+  handleTouch();
   wifiLoop();
 
   if (WiFi.status() != WL_CONNECTED) {
@@ -114,6 +129,5 @@ void loop() {
       fetchAndDrawAircraft();
     }
   }
-
   delay(10);
 }

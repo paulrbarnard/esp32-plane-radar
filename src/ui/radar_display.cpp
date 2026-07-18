@@ -52,6 +52,7 @@ int s_scale_label_h = 0;
 lgfx::LovyanGFX* s_draw = &tft;
 LGFX_Sprite s_frame(&tft);
 bool s_frame_ready = false;
+int s_selected_aircraft = -1;
 
 class DrawScope {
  public:
@@ -533,6 +534,24 @@ void drawAircraft() {
     const size_t i = items[d].index;
     drawAircraftTag(items[d].x, items[d].y, planes[i]);
   }
+
+  if (s_selected_aircraft >= 0 && static_cast<size_t>(s_selected_aircraft) < n) {
+    const auto& p = planes[s_selected_aircraft];
+    char line[48];
+    s_draw->fillRoundRect(28, 132, 424, 216, 14, s_draw->color565(8, 24, 34));
+    s_draw->drawRoundRect(28, 132, 424, 216, 14, radar::kColorGrid);
+    s_draw->setTextColor(radar::kColorLabel, s_draw->color565(8, 24, 34));
+    s_draw->setTextDatum(textdatum_t::top_left);
+    displayFontSetBitmap(*s_draw, &fonts::FreeSansBold12pt7b);
+    snprintf(line, sizeof(line), "%s  %s", p.callsign[0] ? p.callsign : "Unknown", p.type[0] ? p.type : "type unknown");
+    s_draw->drawString(line, 48, 158);
+    displayFontSetBitmap(*s_draw, &fonts::FreeSans9pt7b);
+    snprintf(line, sizeof(line), "Altitude: %s", p.alt[0] ? p.alt : "unknown"); s_draw->drawString(line, 48, 194);
+    snprintf(line, sizeof(line), "Speed: %.0f kt   Track: %.0f°", p.gs_knots, p.track_deg); s_draw->drawString(line, 48, 222);
+    float dx=0,dy=0,km=0; offsetKmFromCenter(p.lat,p.lon,&dx,&dy,&km);
+    snprintf(line, sizeof(line), "Distance: %.1f mi", km / 1.609344f); s_draw->drawString(line, 48, 250);
+    s_draw->drawString("Tap anywhere to close", 48, 292);
+  }
 }
 
 void applyCardinalStyle() {
@@ -671,6 +690,7 @@ void renderFrame() {
     drawAircraft();
   }
   s_frame.pushSprite(0, 0);
+  displayFlush();
   tft.setTextDatum(textdatum_t::top_left);
 }
 
@@ -689,6 +709,7 @@ void radarDisplayDraw() {
   const DrawScope scope(tft);
   drawStaticGrid(tft);
   drawAircraft();
+  displayFlush();
   tft.setTextDatum(textdatum_t::top_left);
 }
 
@@ -701,6 +722,21 @@ void radarDisplayRefreshAircraft() {
   }
 
   radarDisplayDraw();
+}
+
+void radarDisplayHandleTap(int x, int y) {
+  if (s_selected_aircraft >= 0) { s_selected_aircraft = -1; radarDisplayDraw(); return; }
+  const auto* planes = services::adsb::aircraftList();
+  const size_t n = services::adsb::aircraftCount();
+  // Aircraft labels and speed vectors extend beyond the small heading marker.
+  // A 60 px target is comfortable on the 480 px touch display.
+  int best = -1, best_sq = 60 * 60;
+  for (size_t i = 0; i < n; ++i) {
+    int px = 0, py = 0; latLonToScreen(planes[i].lat, planes[i].lon, &px, &py);
+    const int dx = x - px, dy = y - py, d = dx * dx + dy * dy;
+    if (d < best_sq && isInsideOuterRing(px, py)) { best = static_cast<int>(i); best_sq = d; }
+  }
+  if (best >= 0) { s_selected_aircraft = best; radarDisplayDraw(); }
 }
 
 }  // namespace ui

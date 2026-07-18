@@ -1,10 +1,14 @@
 # Plane Radar
 
-<img width="800" height="450" alt="plane-radar" src="https://github.com/user-attachments/assets/716d0992-dab8-47ba-8f1a-2aec7f607419" />
-
-**3D printed case (STL + assembly):** [MakerWorld](https://makerworld.com/en/models/2872376-esp32-plane-radar-live-ads-b-on-a-round-display#profileId-3207083) · **Firmware:** [Releases](https://github.com/MatixYo/ESP32-Plane-Radar/releases)
-
 Firmware for the **Waveshare ESP32-S3-Touch-LCD-2.1** with its **2.1″ round ST7701 RGB display** (480×480). Shows a circular **ADS-B radar** around your configured location, with **WiFiManager** for first-time setup.
+
+## In action
+
+<p align="center">
+  <img width="31%" alt="Plane Radar display with live classified aircraft" src="docs/images/radar-overview.jpeg" />
+  <img width="31%" alt="Plane Radar aircraft information panel" src="docs/images/aircraft-information.jpeg" />
+  <img width="31%" alt="Plane Radar aircraft registry and Wikimedia photo panel" src="docs/images/aircraft-registry.jpeg" />
+</p>
 
 ## What it does
 

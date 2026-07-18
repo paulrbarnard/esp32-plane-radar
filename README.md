@@ -1,8 +1,13 @@
 # Plane Radar
 
-Firmware for the **Waveshare ESP32-S3-Touch-LCD-2.1** with its **2.1″ round ST7701 RGB display** (480×480). Shows a circular **ADS-B radar** around your configured location, with **WiFiManager** for first-time setup.
+Plane Radar is a native **ESP-IDF 5.5** application for the
+**Waveshare ESP32-S3-Touch-LCD-2.1**: a 480×480 round ST7701 RGB display with
+a CST820 capacitive touch controller. It presents live ADS-B aircraft around a
+configured centre point, with classification, details, registry enrichment and
+on-demand aircraft photographs.
 
-Based on the [MakerWorld enclosure and assembly project](https://makerworld.com/en/models/2872376-esp32-plane-radar-live-ads-b-on-a-round-display#profileId-3207083) and the [original Plane Radar firmware](https://github.com/MatixYo/ESP32-Plane-Radar/releases).
+Based on the [MakerWorld enclosure and assembly project](https://makerworld.com/en/models/2872376-esp32-plane-radar-live-ads-b-on-a-round-display#profileId-3207083)
+and the [original Plane Radar firmware](https://github.com/MatixYo/ESP32-Plane-Radar).
 
 ## In action
 
@@ -12,180 +17,124 @@ Based on the [MakerWorld enclosure and assembly project](https://makerworld.com/
   <img width="31%" alt="Plane Radar aircraft registry and Wikimedia photo panel" src="docs/images/aircraft-registry.jpeg" />
 </p>
 
-## What it does
+## Features
 
-1. **Wi‑Fi setup** (if needed) — captive portal on AP **`PlaneRadar-Setup`**
-2. **Radar** — live aircraft from [adsb.fi](https://opendata.adsb.fi/) on a sonar-style grid
+- Native ESP-IDF RGB-panel rendering with PSRAM bounce buffers for a stable,
+  tear-free display.
+- CST820 touch input with generous aircraft and close-button hit targets.
+- Live aircraft from [adsb.fi](https://opendata.adsb.fi/) refreshed about every
+  three seconds while Wi-Fi is connected.
+- Kilometre-only radar scales: **5, 10, 15, 20, and 25 km**.
+- Directional aircraft icons: jets (blue), prop aircraft (amber), gliders
+  (purple), helicopters (green), and unknown aircraft (yellow). A neutral-grey
+  vector shows heading and relative speed.
+- First-level touch panel with live altitude, speed, heading, ICAO type,
+  manufacturer, model, airframe and engine information.
+- **MORE** panel with registration, operator, owner, build year, UK CAA
+  G-INFO enrichment, SD-card registry data, and an on-demand Wikimedia Commons
+  image.
+- Optional FAT-formatted microSD `RADARDB` database for type and registration
+  data.
 
-After Wi‑Fi is saved, the device reconnects automatically; the radar runs in the main loop with periodic ADS-B updates (~5 s).
+## Controls
 
-## Controls (BOOT, GPIO 0, active LOW)
+| Input | Action |
+|---|---|
+| Short press **BOOT** (GPIO 0) | Cycle `5 → 10 → 15 → 20 → 25 km`; redraws the cached aircraft immediately. |
+| Hold **BOOT** for 3 seconds | Clears saved ESP-IDF Wi-Fi credentials and Radar location/range settings, then restarts. |
+| Tap an aircraft | Open the live aircraft-information panel. |
+| Tap **MORE** | Open registry, CAA and photograph details. |
+| Tap the panel or **×** | Close the active details panel. |
 
-| Action | Effect |
-|--------|--------|
-| **Short tap** | Cycle range preset (5 → 10 → 15 → 20 → 25 km); saved to flash |
-| **Hold 3 s** | Clear Wi‑Fi, location, and units; reboot into setup portal |
+The selected range is retained in NVS. The default after clearing settings is
+15 km.
 
-During setup you can also hold BOOT at power-on to force a credential reset (same as the long press).
+## Wi-Fi and location
 
-## Wi‑Fi setup portal
+The native target runs as an ESP-IDF Wi-Fi station and reconnects using
+credentials already stored in the ESP32's Wi-Fi NVS storage. The legacy
+Arduino/WiFiManager captive portal is **not** part of the native `idf/` target.
 
-**First-time setup** (no saved Wi‑Fi):
+The application currently uses the saved Radar location when present; otherwise
+it defaults to **52.3676, 4.9041**. Consequently, do not use the three-second
+BOOT reset unless you can provision the station credentials again. A native
+configuration portal is not currently implemented.
 
-1. Connect to **`PlaneRadar-Setup`**
-2. Open **`http://plane-radar.local`** (preferred) or **`http://192.168.4.1`** — both are shown on the yellow setup screen; captive portal may open automatically
-3. Set home Wi‑Fi, then save
+## Build and flash
 
-**Reconfigure anytime** (after the device is on your network):
+The supported firmware is the native ESP-IDF project in [`idf/`](idf/). It is
+built with the shared ESP-IDF installation, not PlatformIO.
 
-1. Open **`http://plane-radar.local`** or **`http://<device-ip>`** (e.g. from your router or serial log at boot)
-2. Change Wi‑Fi, location, units, or runway overlay; save
+This workspace expects:
 
-The same portal runs on the setup AP and on the device’s LAN IP while connected to Wi‑Fi. mDNS hostname is `plane-radar` → **plane-radar.local** (`kPortalHostname` in `config.h`). Some clients resolve `.local` slowly; use the IP if needed.
+- ESP-IDF 5.5 at `/Volumes/Shed Data/ownCloud/Development/ESP32/esp-idf`
+- ESP-IDF tools at `/Volumes/Shed Data/ownCloud/Development/ESP32/.espressif`
+- the shared LVGL component at
+  `/Volumes/Shed Data/ownCloud/Development/ESP32/Defender/LandyGauge/components/lvgl__lvgl`
 
-**Custom fields** (stored in NVS):
+Build:
 
-| Field | Purpose |
-|-------|---------|
-| **Latitude / Longitude** | Radar center and ADS-B query position (defaults in `config.h` until set) |
-| **Display distances in miles** | Ring scale label in **mi** instead of **km** (e.g. `6mi` vs `10km`) |
-| **Show airport runways** | Major-airport runway overlay on the radar (off to hide) |
-
-After a reset, the device reboots and shows the setup screen immediately (no “Connecting” loop on stale credentials).
-
-## Radar display
-
-### Grid
-
-- Dark blue background, subdued green rings and crosshairs
-- White **N / S / E / W** at the bezel; range label on the **east** spoke (ring 3 = ¾ of outer radius)
-- White center dot
-
-Layout and colors: `include/ui/radar_theme.h`.
-
-### Range presets
-
-| Ring 3 label | Outer radius (aircraft scale) |
-|------------|-------------------------------|
-| 5 km | ~6.7 km |
-| 10 km | ~13.3 km |
-| 15 km | ~20 km (default) |
-| 20 km | ~26.7 km |
-| 25 km | ~33.3 km |
-
-Preset and miles/km choice persist across reboot (`planeradar` NVS namespace).
-
-### Runways
-
-- Major airports from OurAirports (`large_airport`); all open runway strips in range (helipads excluded)
-- Teal runway lines with one ICAO label per airport (e.g. `KJFK`); toggle in the Wi‑Fi setup portal
-- Update the embedded list: `python3 scripts/build_large_airports.py`
-
-### Aircraft
-
-- **Inside the outer ring** — red heading triangle, magenta speed vector (clipped at the ring), callsign / type / altitude tags
-- **Outside the ring** (still within ADS-B fetch) — small **red dot on the screen rim** at the correct bearing (direction cue; not distance-accurate past the ring)
-- **Tags** — placed toward the **center**: west (left) → tag on the **right** of the symbol; east (right) → tag on the **left**
-
-As range decreases (or aircraft approach), targets move inward; beyond-ring dots become full symbols when they cross the outer ring.
-
-### ADS-B
-
-- Source: `https://opendata.adsb.fi/api/v3/`
-- Fetch radius: `ui::radar::fetchRadiusKm()` — scales with the active preset to roughly the screen edge (so rim dots have data)
-- Poll interval: `kAdsbFetchIntervalMs` (5 s) in `config.h`
-- Ground aircraft hidden by default (`kAdsbShowGroundAircraft`)
-
-## Configuration
-
-Edit **`include/config.h`** for hardware and behavior:
-
-| Area | Keys / notes |
-|------|----------------|
-| Portal | `kPortalApName`, `kPortalIp`, `kPortalHostname` / `kPortalHostUrl` (mDNS; needs `-DWM_MDNS` in `platformio.ini`) |
-| Wi‑Fi timing | connect attempts, reconnect grace, portal timeout (`0` = no timeout) |
-| BOOT | `kBootPin`, `kBootResetHoldMs`, `kBootTapMinMs` |
-| Display SPI | pins, `kDisplayInvert`, `kDisplayRgbOrder`, `kDisplaySpiWriteHz` |
-| Default location | `kDefaultRadarLat`, `kDefaultRadarLon` (until portal overrides) |
-| ADS-B | `kAdsbFetchIntervalMs`, `kAdsbShowGroundAircraft` |
-
-Range presets: `include/ui/radar_range.h` (`kRangePresets`).
-
-## Project layout
-
-```
-include/
-  config.h
-  hardware/
-    lgfx_config.hpp
-    display.h
-    display_font.h
-  data/
-    large_airports.h
-  ui/
-    radar_theme.h
-    radar_range.h
-    radar_display.h
-    runway_overlay.h
-    status_screens.h
-  services/
-    wifi_setup.h
-    radar_location.h
-    adsb_client.h
-data/
-  ui_font.vlw              — embedded smooth UI font (Noto Sans Bold)
-scripts/
-  build_large_airports.py
-src/
-  main.cpp
-  data/
-    large_airports_data.cpp
-  hardware/
-  ui/
-  services/
+```zsh
+export IDF_TOOLS_PATH="/Volumes/Shed Data/ownCloud/Development/ESP32/.espressif"
+source "/Volumes/Shed Data/ownCloud/Development/ESP32/esp-idf/export.sh"
+cd "/Volumes/Shed Data/ownCloud/Development/ESP32/Radar/idf"
+idf.py build
 ```
 
-## Hardware
+Flash and open the serial monitor for the usual board port:
 
-This target is wired for the **Waveshare ESP32-S3-Touch-LCD-2.1**. Its ST7701 display, reset/CS expander, RGB bus, and backlight are initialized from the official Waveshare pinout; no additional display wiring is required.
-
-## Build
-
-```bash
-pio run -t upload
-pio device monitor
+```zsh
+export IDF_TOOLS_PATH="/Volumes/Shed Data/ownCloud/Development/ESP32/.espressif"
+source "/Volumes/Shed Data/ownCloud/Development/ESP32/esp-idf/export.sh"
+cd "/Volumes/Shed Data/ownCloud/Development/ESP32/Radar/idf"
+idf.py -p /dev/cu.usbmodem241201 flash monitor
 ```
 
-- PlatformIO env: **`waveshare-esp32-s3-touch-lcd-2-1`**
-- Serial: **115200** baud
-- USB CDC on boot enabled in `platformio.ini` for the Super Mini
+Exit the monitor with `Ctrl+]`.
 
-### Web-flashable release image
+## SD-card database
 
-Single `.bin` for [esptool-js](https://espressif.github.io/esptool-js/) and similar tools (ESP32-S3, 16 MB flash, at **0x0**):
+The Radar looks for `RADARDB` on a FAT-formatted microSD card. It can contain a
+compact ICAO type catalogue plus indexed registration, owner, operator and
+year data. The device continues to work without a card using its small built-in
+type catalogue and live ADS-B data.
 
-```bash
-chmod +x scripts/merge-firmware.sh   # once
-./scripts/merge-firmware.sh
+Create and install a database with the supplied tools. Full input formats,
+licensing notes and examples are in [`tools/README.md`](tools/README.md).
+
+```zsh
+python3 tools/build_radar_sd_database.py \
+  --types-json ~/Downloads/aircraftDesignators.json \
+  --sd-root /Volumes/RADAR_SD --replace
 ```
 
-Writes `release/plane-radar-merged.bin`. Skip rebuild if firmware is already built:
+The tool never formats a card; it writes only the `RADARDB` directory to the
+mounted FAT volume supplied by `--sd-root`.
 
-```bash
-./scripts/merge-firmware.sh --no-build
+## Live Wikimedia photographs
+
+Photographs are requested only after the user opens **MORE**. To avoid direct
+embedded-device rate limiting, the firmware uses the included trusted-LAN
+relay, [`tools/radar_photo_proxy.py`](tools/radar_photo_proxy.py). Run it on a
+computer with a stable LAN address:
+
+```zsh
+python3 tools/radar_photo_proxy.py --host 192.168.0.52 --port 8088
 ```
 
-Or via PlatformIO only (output: `.pio/build/waveshare-esp32-s3-touch-lcd-2-1/firmware-merged.bin`):
+Keep the proxy on the private LAN only; do not bind it to `0.0.0.0` or expose it
+to the Internet. If the proxy computer's address changes, update
+`RADAR_PHOTO_PROXY` in [`idf/main/radar/radar_photo.c`](idf/main/radar/radar_photo.c)
+and rebuild.
 
-```bash
-pio run -e waveshare-esp32-s3-touch-lcd-2-1
-pio run -t merge -e waveshare-esp32-s3-touch-lcd-2-1
+## Repository layout
+
+```text
+idf/                 Native ESP-IDF 5.5 application that is flashed to the board
+idf/main/radar/      ADS-B, UI, range, SD, CAA and photograph modules
+tools/               SD database builder, registry importers and photo proxy
+docs/images/         Project photographs used by this README
+partitions/          ESP-IDF partition-table definition
 ```
 
-Put the board in download mode (hold **BOOT**, tap **RESET**), then flash with Chrome/Edge over USB.
-
-## Dependencies
-
-- [LovyanGFX](https://github.com/lovyan03/LovyanGFX)
-- [WiFiManager](https://github.com/tzapu/WiFiManager)
-- [ArduinoJson](https://github.com/bblanchon/ArduinoJson)
+GitHub Actions firmware builds are intentionally disabled for this project.

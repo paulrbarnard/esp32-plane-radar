@@ -2,6 +2,8 @@
 
 Firmware for the **Waveshare ESP32-S3-Touch-LCD-2.1** with its **2.1″ round ST7701 RGB display** (480×480). Shows a circular **ADS-B radar** around your configured location, with **WiFiManager** for first-time setup.
 
+Based on the [MakerWorld enclosure and assembly project](https://makerworld.com/en/models/2872376-esp32-plane-radar-live-ads-b-on-a-round-display#profileId-3207083) and the [original Plane Radar firmware](https://github.com/MatixYo/ESP32-Plane-Radar/releases).
+
 ## In action
 
 <p align="center">

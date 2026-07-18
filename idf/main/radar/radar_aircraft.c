@@ -181,14 +181,24 @@ void radar_aircraft_center(double *lat, double *lon)
     load_location(lat, lon);
 }
 
-void radar_aircraft_refresh_ui(void)
+static void refresh_ui(bool force)
 {
     size_t count;
     xSemaphoreTake(aircraft_lock, portMAX_DELAY);
-    if (generation == displayed_generation) { xSemaphoreGive(aircraft_lock); return; }
+    if (!force && generation == displayed_generation) { xSemaphoreGive(aircraft_lock); return; }
     count = aircraft_count;
     memcpy(ui_snapshot, aircraft, count * sizeof(ui_snapshot[0]));
     displayed_generation = generation;
     xSemaphoreGive(aircraft_lock);
     radar_ui_show_aircraft(ui_snapshot, count);
+}
+
+void radar_aircraft_refresh_ui(void)
+{
+    refresh_ui(false);
+}
+
+void radar_aircraft_redraw_ui(void)
+{
+    refresh_ui(true);
 }

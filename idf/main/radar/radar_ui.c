@@ -106,6 +106,11 @@ static void update_range_label(void)
     lv_label_set_text(range_label, text);
 }
 
+void radar_ui_update_range(void)
+{
+    if (range_label && lv_obj_is_valid(range_label)) update_range_label();
+}
+
 static void close_detail(lv_event_t *event)
 {
     (void)event;

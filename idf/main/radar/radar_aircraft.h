@@ -24,4 +24,5 @@ typedef struct {
 
 void radar_aircraft_start(void);
 void radar_aircraft_refresh_ui(void);
+void radar_aircraft_redraw_ui(void);
 void radar_aircraft_center(double *lat, double *lon);

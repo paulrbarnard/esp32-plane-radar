@@ -2,6 +2,7 @@
 #include "esp_event.h"
 #include "esp_netif.h"
 #include "esp_wifi.h"
+#include "nvs.h"
 #include "nvs_flash.h"
 
 static bool connected;
@@ -26,3 +27,23 @@ bool radar_wifi_start(void) {
     return esp_wifi_start() == ESP_OK;
 }
 bool radar_wifi_connected(void) { return connected; }
+
+static void erase_settings_namespace(const char *name)
+{
+    nvs_handle_t handle;
+    if (nvs_open(name, NVS_READWRITE, &handle) != ESP_OK) return;
+    nvs_erase_all(handle);
+    nvs_commit(handle);
+    nvs_close(handle);
+}
+
+bool radar_wifi_clear_settings(void)
+{
+    /* esp_wifi_restore() removes the credentials and other Wi-Fi settings
+     * persisted by ESP-IDF. The two application namespaces retain Radar's
+     * location, range and units, so clear those as the original BOOT hold did. */
+    const esp_err_t result = esp_wifi_restore();
+    erase_settings_namespace("radar");
+    erase_settings_namespace("planeradar");
+    return result == ESP_OK;
+}

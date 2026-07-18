@@ -184,22 +184,6 @@ pio run -t merge -e waveshare-esp32-s3-touch-lcd-2-1
 
 Put the board in download mode (hold **BOOT**, tap **RESET**), then flash with Chrome/Edge over USB.
 
-### CI and releases (GitHub Actions)
-
-| Workflow | When | Output |
-|----------|------|--------|
-| [Build](.github/workflows/build.yml) | Push / PR to `main` | Artifact `plane-radar-waveshare-esp32-s3-touch-lcd-2-1` (merged + split `.bin` files, ~90 days) |
-| [Release](.github/workflows/release.yml) | Git tag `v*` (e.g. `v1.0.0`) | GitHub Release asset `plane-radar-v1.0.0.bin` + `.sha256` |
-
-To ship a version users can download:
-
-```bash
-git tag v1.0.0
-git push origin v1.0.0
-```
-
-The release workflow builds firmware in CI and attaches the merged image to the release. Download from **Releases** on GitHub, then flash at **0x0** (ESP32-S3, 16 MB).
-
 ## Dependencies
 
 - [LovyanGFX](https://github.com/lovyan03/LovyanGFX)
